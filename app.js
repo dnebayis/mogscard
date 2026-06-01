@@ -689,8 +689,6 @@ function tweetCard(mogId, xHandle, tier, memeName) {
     ``,
     `generate yours 👇`,
     `https://www.monadmogs.xyz/#studio`,
-    ``,
-    `#MonadMogs #Monad`,
   ].join('\n');
   window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 }
