@@ -462,33 +462,35 @@ a:hover { color: var(--monad-purple-light); }
   position: relative;
   width: var(--card-w);
   border-radius: var(--card-radius);
-  border: var(--card-border) solid var(--rarity-color, var(--monad-purple));
-  background: var(--monad-mid);
+  background: transparent;
   cursor: pointer;
-
-  /* 3D context */
-  transform-style: preserve-3d;
-  transition: transform 0.12s ease-out, box-shadow 0.3s;
-
-  /* Outer glow by rarity */
-  box-shadow:
-    0 0 0 1px rgba(0,0,0,0.6),
-    0 24px 60px rgba(0,0,0,0.8),
-    0 0 50px var(--rarity-glow, rgba(131,110,249,0.3));
-
-  overflow: hidden;
+  /* perspective container for 3D flip */
+  perspective: 1200px;
+  overflow: visible;
   user-select: none;
 }
 
-/* ---- Holographic rainbow shimmer layer ---- */
-.mog-card::before {
+/* Flip inner — rotates for the card flip */
+.card-flip-inner {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.4, 0.2, 0.2, 1);
+  border-radius: var(--card-radius);
+}
+
+.mog-card.is-flipped .card-flip-inner {
+  transform: rotateY(180deg);
+}
+
+/* ---- Holographic shimmer on front face ---- */
+.card-front-face::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   z-index: 20;
   pointer-events: none;
-
   background:
     radial-gradient(
       ellipse 80% 60% at var(--mouse-x, 50%) var(--mouse-y, 50%),
@@ -505,13 +507,12 @@ a:hover { color: var(--monad-purple-light); }
       rgba(180,0,255,0.2)   85%,
       rgba(255,0,100,0.2)   100%
     );
-
   mix-blend-mode: screen;
   opacity: 0;
   transition: opacity 0.35s;
 }
 
-.mog-card:hover::before {
+.mog-card:not(.is-flipped):hover .card-front-face::before {
   opacity: 1;
   animation: holo-spin 5s linear infinite;
 }
@@ -521,37 +522,107 @@ a:hover { color: var(--monad-purple-light); }
   to   { --holo-angle: 360deg; }
 }
 
-/* ---- Watermark / Filigran layer ---- */
-.mog-card::after {
+/* ---- Watermark / filigree on front face ---- */
+.card-front-face::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   z-index: 19;
   pointer-events: none;
-
   background-image:
     repeating-linear-gradient(
       -40deg,
-      transparent,
-      transparent 18px,
-      rgba(131,110,249,0.07) 18px,
-      rgba(131,110,249,0.07) 19px
+      transparent, transparent 18px,
+      rgba(131,110,249,0.07) 18px, rgba(131,110,249,0.07) 19px
     ),
     repeating-linear-gradient(
       50deg,
-      transparent,
-      transparent 28px,
-      rgba(131,110,249,0.04) 28px,
-      rgba(131,110,249,0.04) 29px
+      transparent, transparent 28px,
+      rgba(131,110,249,0.04) 28px, rgba(131,110,249,0.04) 29px
     );
-
   opacity: 0;
   transition: opacity 0.4s ease;
 }
 
-.mog-card:hover::after {
+.mog-card:not(.is-flipped):hover .card-front-face::after {
   opacity: 1;
+}
+
+/* =====================================================
+   CARD FRONT / BACK FACES
+   ===================================================== */
+
+/* Front face — backface-visibility hides it when flipped */
+.card-front-face {
+  position: relative;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  background: var(--monad-mid);
+  /* Border and shadow live here now (not on .mog-card) */
+  border: var(--card-border) solid var(--rarity-color, var(--monad-purple));
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.6),
+    0 24px 60px rgba(0,0,0,0.8),
+    0 0 50px var(--rarity-glow, rgba(131,110,249,0.3));
+}
+
+/* Back face — starts rotated 180deg, becomes visible when flip-inner rotates */
+.card-back-face {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: rotateY(180deg);
+  background: linear-gradient(160deg, #0C0917 0%, #160F2E 50%, #0C0917 100%);
+  border: var(--card-border) solid var(--rarity-color, var(--monad-purple));
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.6),
+    0 24px 60px rgba(0,0,0,0.8),
+    0 0 50px var(--rarity-glow, rgba(131,110,249,0.3));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.875rem 1rem;
+}
+
+/* =====================================================
+   RARITY BACKGROUND PATTERNS (per tier)
+   ===================================================== */
+
+.card-bg-legendary .card-front-face {
+  background-image:
+    radial-gradient(ellipse 130% 70% at 50% -10%, rgba(245,197,24,0.13) 0%, transparent 55%),
+    repeating-linear-gradient(
+      45deg,
+      transparent, transparent 22px,
+      rgba(245,197,24,0.035) 22px, rgba(245,197,24,0.035) 23px
+    );
+}
+
+.card-bg-epic .card-front-face {
+  background-image:
+    radial-gradient(ellipse 130% 70% at 50% -10%, rgba(192,132,252,0.11) 0%, transparent 55%),
+    repeating-linear-gradient(
+      -45deg,
+      transparent, transparent 20px,
+      rgba(192,132,252,0.04) 20px, rgba(192,132,252,0.04) 21px
+    );
+}
+
+.card-bg-rare .card-front-face {
+  background-image:
+    radial-gradient(ellipse 100% 55% at 25% 0%, rgba(96,165,250,0.09) 0%, transparent 55%),
+    radial-gradient(ellipse 80%  45% at 75% 100%, rgba(96,165,250,0.06) 0%, transparent 55%);
+}
+
+.card-bg-uncommon .card-front-face {
+  background-image:
+    radial-gradient(ellipse 110% 55% at 50% -5%, rgba(74,222,128,0.07) 0%, transparent 55%);
 }
 
 /* =====================================================
@@ -566,9 +637,100 @@ a:hover { color: var(--monad-purple-light); }
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .ch-left { display: flex; flex-direction: column; gap: 1px; }
+
+/* right side: type badge stacked above rarity badge */
+.ch-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* ---- Click-to-flip hint (appears on hover) ---- */
+.card-click-hint {
+  position: absolute;
+  bottom: 0.55rem;
+  right: 0.75rem;
+  font-family: 'Bangers', cursive;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--txt-muted);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.mog-card:not(.is-flipped):hover .card-click-hint {
+  opacity: 0.55;
+}
+
+/* =====================================================
+   TYPE BADGE
+   ===================================================== */
+.type-badge {
+  font-family: 'Bangers', cursive;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  opacity: 0.9;
+}
+
+/* ---- GLITCH badge — animated RGB aberration effect ---- */
+.type-glitch {
+  position: relative;
+  animation: glitch-badge 5s infinite;
+  border-style: dashed;
+  text-shadow:
+    0.04em 0 0 rgba(255, 0, 180, 0.75),
+    -0.04em 0 0 rgba(0, 255, 200, 0.75);
+}
+
+@keyframes glitch-badge {
+  0%, 80%, 100% {
+    text-shadow:
+      0.04em 0 0 rgba(255, 0, 180, 0.7),
+      -0.04em 0 0 rgba(0, 255, 200, 0.7);
+    transform: translate(0, 0);
+    opacity: 0.9;
+  }
+  82% {
+    text-shadow:
+      -0.06em 0 0 rgba(255, 0, 180, 0.9),
+      0.06em 0 0 rgba(0, 255, 200, 0.9);
+    transform: translate(-3px, 1px);
+    opacity: 1;
+  }
+  84% {
+    text-shadow:
+      0.06em 0 0 rgba(255, 0, 180, 0.9),
+      -0.02em 0 0 rgba(0, 255, 200, 0.9);
+    transform: translate(3px, -1px);
+    opacity: 0.7;
+  }
+  86% {
+    text-shadow:
+      -0.04em 0 0 rgba(255, 0, 180, 0.75),
+      0.04em 0 0 rgba(0, 255, 200, 0.75);
+    transform: translate(1px, 0);
+    opacity: 1;
+  }
+  88% {
+    text-shadow:
+      0.04em 0 0 rgba(255, 0, 180, 0.75),
+      -0.04em 0 0 rgba(0, 255, 200, 0.75);
+    transform: translate(0, 0);
+    opacity: 0.9;
+  }
+}
 
 .ch-collection {
   font-family: 'Press Start 2P', monospace;
@@ -731,14 +893,80 @@ a:hover { color: var(--monad-purple-light); }
   background: var(--monad-mid);
 }
 
+/* Name + percentile row */
+.name-percentile-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
 .card-meme-name {
   font-family: 'Bangers', cursive;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
   color: var(--txt-primary);
   line-height: 1.15;
-  margin-bottom: 0.4rem;
   text-transform: uppercase;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Percentile badge */
+.percentile-badge {
+  font-family: 'Bangers', cursive;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--rarity-color, var(--monad-purple));
+  background: rgba(131,110,249,0.1);
+  border: 1px solid var(--rarity-color, var(--monad-purple));
+  border-radius: 4px;
+  padding: 0.1rem 0.38rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+/* ATK / DEF / SPD stats row */
+.card-stats {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 0.3rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.stat-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.36rem;
+  color: var(--txt-muted);
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+.stat-value {
+  font-family: 'Bangers', cursive;
+  font-size: 1.25rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.stat-atk { color: #F87171; }
+.stat-def { color: #60A5FA; }
+.stat-spd { color: #4ADE80; }
+
+.stat-divider {
+  color: var(--monad-border);
+  font-size: 0.8rem;
+  margin-top: 6px;
 }
 
 .hp-row {
@@ -955,6 +1183,24 @@ a:hover { color: var(--monad-purple-light); }
   font-size: 0.52rem;
 }
 
+.cf-score {
+  text-align: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: var(--txt-muted);
+  line-height: 1.8;
+  letter-spacing: 0.04em;
+}
+
+.cf-score-num {
+  font-family: 'Bangers', cursive;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  color: var(--rarity-color, var(--monad-purple));
+  display: block;
+  line-height: 1.1;
+}
+
 .cf-credit {
   text-align: right;
   font-family: 'Press Start 2P', monospace;
@@ -1041,7 +1287,7 @@ a:hover { color: var(--monad-purple-light); }
   }
 }
 
-.mog-card.revealed {
+.mog-card.revealed .card-flip-inner {
   animation: card-reveal 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
@@ -1083,6 +1329,182 @@ a:hover { color: var(--monad-purple-light); }
   color: var(--txt-primary);
   background: rgba(255,255,255,0.05);
   transform: translateY(-2px);
+}
+
+
+.btn-tweet {
+  color: #1D9BF0;
+}
+.btn-tweet:hover {
+  background: rgba(29,155,240,0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(29,155,240,0.25);
+}
+
+/* =====================================================
+   CARD BACK — Content Styles
+   ===================================================== */
+
+.back-header-section {
+  text-align: center;
+  border-bottom: 1px solid var(--monad-border);
+  padding-bottom: 0.55rem;
+  margin-bottom: 0.55rem;
+  width: 100%;
+}
+
+.back-logo-text {
+  font-family: 'Bangers', cursive;
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  color: var(--monad-purple);
+  text-shadow: 0 0 20px rgba(131,110,249,0.5);
+  line-height: 1.1;
+}
+
+.back-type-pill {
+  display: inline-block;
+  font-family: 'Bangers', cursive;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  padding: 0.15rem 0.55rem;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  margin: 0.2rem 0;
+}
+
+.back-mog-id {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: var(--txt-secondary);
+  letter-spacing: 0.06em;
+}
+
+.back-stats-section {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.back-section-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.36rem;
+  color: var(--txt-muted);
+  letter-spacing: 0.12em;
+  text-align: center;
+  margin-bottom: 0.45rem;
+}
+
+.back-stat-row {
+  display: grid;
+  grid-template-columns: 2.2rem 1fr 2rem;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.28rem;
+}
+
+.back-stat-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: var(--txt-secondary);
+  letter-spacing: 0.06em;
+}
+
+.back-stat-track {
+  height: 6px;
+  background: var(--monad-dark);
+  border-radius: 3px;
+  border: 1px solid var(--monad-border);
+  overflow: hidden;
+}
+
+.back-stat-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.back-stat-fill-atk { background: linear-gradient(90deg, #DC2626, #F87171); box-shadow: 0 0 6px #F87171; }
+.back-stat-fill-def { background: linear-gradient(90deg, #1D4ED8, #60A5FA); box-shadow: 0 0 6px #60A5FA; }
+.back-stat-fill-spd { background: linear-gradient(90deg, #166534, #4ADE80); box-shadow: 0 0 6px #4ADE80; }
+
+.back-stat-num {
+  font-family: 'Bangers', cursive;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+  color: var(--txt-primary);
+  text-align: right;
+}
+
+.back-games-section {
+  width: 100%;
+  border-top: 1px solid var(--monad-border);
+  padding-top: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.back-game-row {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr auto;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.16rem 0.1rem;
+}
+
+.back-game-icon { font-size: 0.78rem; }
+
+.back-game-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.33rem;
+  color: var(--txt-secondary);
+  letter-spacing: 0.05em;
+}
+
+.back-game-format {
+  font-family: 'Bangers', cursive;
+  font-size: 0.7rem;
+  color: var(--txt-muted);
+  letter-spacing: 0.08em;
+}
+
+.back-special-note {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--rarity-color, var(--monad-purple));
+  text-align: center;
+  margin-top: 0.35rem;
+  letter-spacing: 0.02em;
+  padding: 0.2rem 0.4rem;
+  border: 1px dashed var(--rarity-color, var(--monad-purple));
+  border-radius: 5px;
+  background: rgba(131,110,249,0.05);
+}
+
+.back-footer-section {
+  width: 100%;
+  border-top: 1px solid var(--monad-border);
+  padding-top: 0.45rem;
+  text-align: center;
+  margin-top: auto;
+}
+
+.back-contract,
+.back-chain {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.33rem;
+  color: var(--txt-muted);
+  letter-spacing: 0.05em;
+  line-height: 1.9;
+}
+
+.back-flip-hint {
+  font-family: 'Bangers', cursive;
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  color: var(--txt-muted);
+  text-align: center;
+  margin-top: 0.35rem;
+  animation: pulse-txt 2s ease-in-out infinite;
 }
 
 /* =====================================================

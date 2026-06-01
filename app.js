@@ -165,6 +165,76 @@ const SPECIAL_MOVES = {
 };
 
 // =====================================================
+// TYPE SYSTEM
+// Derived from traits + rarity, Pokémon-style element
+// =====================================================
+
+const TYPE_PRIORITY = [
+  { test: (tv)       => tv.glitch && tv.glitch !== 'none' && tv.glitch !== 'n/a', type: '👾 GLITCH',  color: '#C084FC', bg: 'rgba(192,132,252,0.15)', cssClass: 'type-glitch' },
+  { test: (tv)       => tv.aura?.includes('legendary'),  type: '👑 DIVINE',   color: '#F5C518', bg: 'rgba(245,197,24,0.12)'  },
+  { test: (tv)       => tv.aura?.includes('finalized'),  type: '✅ CHAIN',    color: '#4ADE80', bg: 'rgba(74,222,128,0.10)'  },
+  { test: (tv)       => tv.eyes?.includes('laser'),      type: '⚡ LASER',    color: '#60A5FA', bg: 'rgba(96,165,250,0.10)'  },
+  { test: (tv)       => tv.eyes?.includes('terminal'),   type: '💻 CYBER',    color: '#4ADE80', bg: 'rgba(74,222,128,0.10)'  },
+  { test: (tv)       => tv.eyes?.includes('money'),      type: '💰 DEGEN',    color: '#F5C518', bg: 'rgba(245,197,24,0.12)'  },
+  { test: (tv)       => tv.eyes?.includes('heart'),      type: '💖 LOVER',    color: '#F472B6', bg: 'rgba(244,114,182,0.10)' },
+  { test: (tv)       => tv.eyes?.includes('star'),       type: '⭐ GALAXY',   color: '#A594FF', bg: 'rgba(165,148,255,0.10)' },
+  { test: (tv)       => tv.body?.includes('golden'),     type: '🥇 GOLDEN',   color: '#F5C518', bg: 'rgba(245,197,24,0.12)'  },
+  { test: (tv)       => tv.body?.includes('rainbow'),    type: '🌈 PRISM',    color: '#A594FF', bg: 'rgba(165,148,255,0.10)' },
+  { test: (tv)       => tv.body?.includes('ghost'),      type: '👻 PHANTOM',  color: '#CBD5E1', bg: 'rgba(203,213,225,0.08)' },
+  { test: (tv)       => tv.body?.includes('zombie'),     type: '🧟 UNDEAD',   color: '#4ADE80', bg: 'rgba(74,222,128,0.10)'  },
+  { test: (tv, tier) => tier === 'legendary',            type: '⚡ VOID',     color: '#F5C518', bg: 'rgba(245,197,24,0.12)'  },
+  { test: (tv, tier) => tier === 'epic',                 type: '🔥 INFERNO',  color: '#C084FC', bg: 'rgba(192,132,252,0.12)' },
+  { test: (tv, tier) => tier === 'rare',                 type: '💎 CRYSTAL',  color: '#60A5FA', bg: 'rgba(96,165,250,0.10)'  },
+  { test: (tv, tier) => tier === 'uncommon',             type: '🌿 NATURE',   color: '#4ADE80', bg: 'rgba(74,222,128,0.10)'  },
+  { test: ()         => true,                            type: '⚪ ORIGIN',   color: '#9BA3AF', bg: 'rgba(155,163,175,0.08)' },
+];
+
+function getTraitValues(traits) {
+  const get = (...keys) => {
+    const t = traits.find(tr => keys.some(k => (tr.trait_type || '').toLowerCase().includes(k)));
+    return (t?.value || '').toLowerCase();
+  };
+  return {
+    eyes:   get('eye', 'eyes'),
+    body:   get('body', 'fur', 'skin'),
+    aura:   get('aura'),
+    glitch: get('glitch'),
+    head:   get('head', 'hat', 'cap', 'crown'),
+    mouth:  get('mouth', 'expression'),
+    hands:  get('hand'),
+    tag:    get('meme', 'tag'),
+    bg:     get('background'),
+  };
+}
+
+function getCardType(traits, tier) {
+  const tv = getTraitValues(traits);
+  return TYPE_PRIORITY.find(r => r.test(tv, tier)) || TYPE_PRIORITY[TYPE_PRIORITY.length - 1];
+}
+
+// =====================================================
+// STATS — ATK / DEF / SPD
+// Derived from rarity score, rank, and trait frequencies
+// =====================================================
+
+function calcStats(rarity, traits) {
+  const rank = parseInt(rarity.rank) || 2500;
+
+  // ATK: raw power from rank (rank 1 → 250, rank 5000 → 30)
+  const atk = Math.min(250, Math.max(30, Math.round(30 + ((5000 - rank) / 4999) * 220)));
+
+  // DEF: resilience from rank, more compressed range (rank 1 → 200, rank 5000 → 50)
+  const def = Math.min(200, Math.max(50, Math.round(50 + ((5000 - rank) / 4999) * 150)));
+
+  // SPD: trait frequency — rarer traits = faster/harder to predict
+  const pcts   = traits.map(t => parseFloat(t.percentage) || 50).filter(p => !isNaN(p));
+  const avgPct = pcts.length ? pcts.reduce((s, p) => s + p, 0) / pcts.length : 50;
+  const spd    = Math.min(250, Math.max(30, Math.round(250 - avgPct * 1.5)));
+
+  return { atk, def, spd };
+}
+
+// =====================================================
 // RARITY PERCENTAGE CLASS
 // =====================================================
 
@@ -321,37 +391,48 @@ async function fetchMogData(mogId) {
 function buildCard(mogId, xHandle, traits, rarity, pfpUrl, svgText) {
   const card = document.getElementById('mog-card');
 
-  const tier   = RARITY[rarity.tier] ? rarity.tier : 'common';
-  const cfg    = RARITY[tier];
-  const rank   = rarity.rank;
-  // HP based on rank (rank 1 = 999 HP, rank 5000 = 100 HP)
-  const hp     = calcHP(rank);
-  const hpPct  = Math.min(100, (hp / 999) * 100);
+  const tier    = RARITY[rarity.tier] ? rarity.tier : 'common';
+  const cfg     = RARITY[tier];
+  const rank    = rarity.rank;
+  const score   = Math.round(parseFloat(rarity.score) || 0);
+  const hp      = calcHP(rank);
+  const hpPct   = Math.min(100, (hp / 999) * 100);
 
-  const memeName  = generateMemeName(tier, traits, mogId);
-  // Filter out boring None traits, limit to 5 most interesting
-  const traitSlice = traits
-    .filter(t => {
-      const v = (t.value ?? '').toLowerCase();
-      return v !== 'none' && v !== '' && v !== 'n/a';
-    })
-    .slice(0, 5);
+  const memeName = generateMemeName(tier, traits, mogId);
+  const cardType = getCardType(traits, tier);
+  const stats    = calcStats(rarity, traits);
 
-  // Apply rarity CSS vars
+  // Percentile badge ("TOP 0.02%")
+  let percentileHTML = '';
+  const pctRaw = rarity.percentile;
+  const pctNum = parseFloat(pctRaw);
+  if (!isNaN(pctNum) && pctNum > 0) {
+    const pctDisplay = pctNum < 0.1 ? pctNum.toFixed(2) : pctNum < 1 ? pctNum.toFixed(1) : pctNum.toFixed(0);
+    percentileHTML = `<span class="percentile-badge">TOP ${pctDisplay}%</span>`;
+  } else if (rank && rank !== '?') {
+    const fallback = (parseInt(rank) / 5000 * 100).toFixed(1);
+    percentileHTML = `<span class="percentile-badge">TOP ${fallback}%</span>`;
+  }
+
+  // Apply rarity CSS vars + bg class
   card.style.setProperty('--rarity-color', cfg.color);
   card.style.setProperty('--rarity-glow',  cfg.glow);
+  card.className = `mog-card card-bg-${tier}`;
+  card.classList.remove('is-flipped');
 
-  // Build trait rows HTML
+  const traitSlice = traits
+    .filter(t => { const v = (t.value ?? '').toLowerCase(); return v !== 'none' && v !== '' && v !== 'n/a'; })
+    .slice(0, 5);
+
   const traitRowsHTML = traitSlice.map(trait => {
     const category = trait.trait_type ?? trait.category ?? trait.key ?? 'Trait';
     const value    = trait.value      ?? trait.trait_value ?? trait.val ?? '???';
     const pct      = getTraitPct(trait);
-    const pctNum   = pct !== null ? parseFloat(pct) : null;
-    const pctLabel = pctNum !== null ? `${pctNum.toFixed(1)}%` : '?%';
-    const pctClass = pctNum !== null ? getPctClass(pctNum) : 'pct-common';
+    const pn       = pct !== null ? parseFloat(pct) : null;
+    const pctLabel = pn !== null ? `${pn.toFixed(1)}%` : '?%';
+    const pctClass = pn !== null ? getPctClass(pn) : 'pct-common';
     const emoji    = getTraitEmoji(category);
     const memeDesc = getMemeCat(category, value);
-
     return `
       <div class="trait-row">
         <span class="trait-emoji" aria-hidden="true">${emoji}</span>
@@ -363,95 +444,102 @@ function buildCard(mogId, xHandle, traits, rarity, pfpUrl, svgText) {
       </div>`;
   }).join('');
 
-  // Special move HTML (Rare+)
   const specialHTML = cfg.specialMove && SPECIAL_MOVES[tier] ? `
     <div class="card-special">
-      <div class="special-header">
-        <span class="special-label">⚡ SPECIAL MOVE</span>
-      </div>
+      <div class="special-header"><span class="special-label">⚡ SPECIAL MOVE</span></div>
       <div class="special-move-name">${escHtml(SPECIAL_MOVES[tier].name)}</div>
       <div class="special-move-desc">${escHtml(SPECIAL_MOVES[tier].desc)}</div>
     </div>` : '';
 
-  // Full card HTML
   card.innerHTML = `
+  <div class="card-flip-inner" id="card-flip-inner">
 
-    <!-- Holographic effects injected here -->
-    <div class="card-watermark-text" aria-hidden="true">
-      <span class="watermark-inner">🐹 MONAD MOGS 🐹 MONAD MOGS 🐹 MONAD MOGS</span>
-    </div>
-    <div class="card-shine-dot" aria-hidden="true"></div>
-
-    <!-- HEADER -->
-    <div class="card-header">
-      <div class="ch-left">
-        <span class="ch-collection">⚡ MONAD MOGS · CC0</span>
-        <span class="ch-id">MOG #${mogId}</span>
+    <!-- ═══ FRONT FACE ═══ -->
+    <div class="card-front-face" id="card-front-face">
+      <div class="card-watermark-text" aria-hidden="true">
+        <span class="watermark-inner">🐹 MONAD MOGS 🐹 MONAD MOGS 🐹 MONAD MOGS</span>
       </div>
-      <span class="rarity-badge ${cfg.badgeClass}" aria-label="Rarity: ${tier}">
-        ${cfg.label}
-      </span>
-    </div>
+      <div class="card-shine-dot" aria-hidden="true"></div>
+      <div class="card-click-hint" aria-hidden="true">↺ FLIP</div>
 
-    <!-- MEDIA ROW: PFP left | Mog render right -->
-    <div class="card-media-row">
-      <div class="pfp-col">
-        <div class="pfp-ring-wrap">
-          <div class="pfp-ring-bg" aria-hidden="true"></div>
-          <div class="pfp-ring-inner" aria-hidden="true"></div>
-          <img
-            class="card-pfp-img"
-            src="${escHtml(pfpUrl)}"
-            alt="@${escHtml(xHandle)} profile picture"
-            loading="eager"
-            crossorigin="anonymous"
-            onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2282%22 height=%2282%22%3E%3Ccircle cx=%2241%22 cy=%2241%22 r=%2241%22 fill=%22%231C1735%22/%3E%3Ctext x=%2241%22 y=%2255%22 text-anchor=%22middle%22 font-size=%2234%22%3E🐹%3C/text%3E%3C/svg%3E'; this.onerror=null;"
-          >
+      <!-- HEADER -->
+      <div class="card-header">
+        <div class="ch-left">
+          <span class="ch-collection">⚡ MONAD MOGS · CC0</span>
+          <span class="ch-id">MOG #${mogId}</span>
         </div>
-        <span class="pfp-handle-tag" aria-label="X handle">@${escHtml(xHandle)}</span>
-      </div>
-      <div class="render-col">
-        ${svgText}
-      </div>
-    </div>
-
-    <!-- NAME & HP -->
-    <div class="card-name-section">
-      <div class="card-meme-name">${escHtml(memeName)}</div>
-      <div class="hp-row" role="meter" aria-label="HP: ${hp}" aria-valuenow="${hp}" aria-valuemin="100" aria-valuemax="999">
-        <span class="hp-label" aria-hidden="true">HP</span>
-        <div class="hp-track" aria-hidden="true">
-          <div class="hp-fill" id="hp-fill-bar" style="width:0%; background: linear-gradient(90deg, var(--monad-purple-dark), ${escHtml(cfg.hpTint)});" data-target="${hpPct.toFixed(1)}"></div>
+        <div class="ch-right">
+          <span class="type-badge ${cardType.cssClass || ''}" style="color:${cardType.color};background:${cardType.bg}">${escHtml(cardType.type)}</span>
+          <span class="rarity-badge ${cfg.badgeClass}" aria-label="Rarity: ${tier}">${cfg.label}</span>
         </div>
-        <span class="hp-value" aria-hidden="true">${hp}</span>
       </div>
+
+      <!-- MEDIA ROW -->
+      <div class="card-media-row">
+        <div class="pfp-col">
+          <div class="pfp-ring-wrap">
+            <div class="pfp-ring-bg" aria-hidden="true"></div>
+            <div class="pfp-ring-inner" aria-hidden="true"></div>
+            <img class="card-pfp-img" src="${escHtml(pfpUrl)}"
+              alt="@${escHtml(xHandle)} profile picture" loading="eager" crossorigin="anonymous"
+              onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2282%22 height=%2282%22%3E%3Ccircle cx=%2241%22 cy=%2241%22 r=%2241%22 fill=%22%231C1735%22/%3E%3Ctext x=%2241%22 y=%2255%22 text-anchor=%22middle%22 font-size=%2234%22%3E🐹%3C/text%3E%3C/svg%3E';this.onerror=null;">
+          </div>
+          <span class="pfp-handle-tag" aria-label="X handle">@${escHtml(xHandle)}</span>
+        </div>
+        <div class="render-col">${svgText}</div>
+      </div>
+
+      <!-- NAME, PERCENTILE, HP, STATS -->
+      <div class="card-name-section">
+        <div class="name-percentile-row">
+          <div class="card-meme-name">${escHtml(memeName)}</div>
+          ${percentileHTML}
+        </div>
+        <div class="hp-row" role="meter" aria-label="HP: ${hp}" aria-valuenow="${hp}" aria-valuemin="100" aria-valuemax="999">
+          <span class="hp-label" aria-hidden="true">HP</span>
+          <div class="hp-track" aria-hidden="true">
+            <div class="hp-fill" id="hp-fill-bar"
+              style="width:0%;background:linear-gradient(90deg,var(--monad-purple-dark),${escHtml(cfg.hpTint)});"
+              data-target="${hpPct.toFixed(1)}"></div>
+          </div>
+          <span class="hp-value" aria-hidden="true">${hp}</span>
+        </div>
+        <div class="card-stats" aria-label="Base stats">
+          <div class="stat-item"><span class="stat-label">ATK</span><span class="stat-value stat-atk">${stats.atk}</span></div>
+          <span class="stat-divider" aria-hidden="true">·</span>
+          <div class="stat-item"><span class="stat-label">DEF</span><span class="stat-value stat-def">${stats.def}</span></div>
+          <span class="stat-divider" aria-hidden="true">·</span>
+          <div class="stat-item"><span class="stat-label">SPD</span><span class="stat-value stat-spd">${stats.spd}</span></div>
+        </div>
+      </div>
+
+      <div class="card-divider" aria-hidden="true"></div>
+
+      <!-- TRAITS -->
+      <div class="card-traits">
+        <div class="traits-header" aria-hidden="true">— BATTLE TRAITS —</div>
+        ${traitRowsHTML || '<div class="trait-row"><span class="trait-emoji">🤷</span><div class="trait-info"><span class="trait-cat">TRAITS</span><span class="trait-val">No traits found, ser</span></div></div>'}
+      </div>
+
+      ${specialHTML}
+
+      <!-- FOOTER -->
+      <div class="card-footer">
+        <div class="cf-rank">RANK <span class="cf-rank-num">#${rank}</span><br>OF ${MOGS_TOTAL.toLocaleString()} MOGS</div>
+        <div class="cf-score">SCORE<br><span class="cf-score-num">${score.toLocaleString()}</span></div>
+        <div class="cf-credit">🐹 CC0 ASSET<br><a href="${MOGS_SITE}" target="_blank" rel="noopener noreferrer">monadmogs.xyz</a></div>
+      </div>
+
+    </div><!-- /card-front-face -->
+
+    <!-- ═══ BACK FACE ═══ -->
+    <div class="card-back-face" id="card-back-face">
+      ${buildCardBack(mogId, xHandle, tier, cfg, cardType, stats)}
     </div>
 
-    <div class="card-divider" aria-hidden="true"></div>
-
-    <!-- TRAITS -->
-    <div class="card-traits">
-      <div class="traits-header" aria-hidden="true">— BATTLE TRAITS —</div>
-      ${traitRowsHTML || '<div class="trait-row"><span class="trait-emoji">🤷</span><div class="trait-info"><span class="trait-cat">TRAITS</span><span class="trait-val">No traits found, ser</span></div></div>'}
-    </div>
-
-    <!-- SPECIAL MOVE -->
-    ${specialHTML}
-
-    <!-- FOOTER -->
-    <div class="card-footer">
-      <div class="cf-rank">
-        RANK <span class="cf-rank-num">#${rank}</span><br>
-        OF ${MOGS_TOTAL.toLocaleString()} MOGS
-      </div>
-      <div class="cf-credit">
-        🐹 CC0 ASSET<br>
-        <a href="${MOGS_SITE}" target="_blank" rel="noopener noreferrer">monadmogs.xyz</a>
-      </div>
-    </div>
+  </div><!-- /card-flip-inner -->
   `;
 
-  // Animate HP bar after paint
   requestAnimationFrame(() => {
     setTimeout(() => {
       const fill = document.getElementById('hp-fill-bar');
@@ -461,32 +549,94 @@ function buildCard(mogId, xHandle, traits, rarity, pfpUrl, svgText) {
 }
 
 // =====================================================
+// CARD BACK BUILDER
+// =====================================================
+
+function buildCardBack(mogId, xHandle, tier, cfg, cardType, stats) {
+  const GAMES = [
+    { icon: '🪨', name: 'ROCK-PAPER-SCISSORS', format: 'BEST OF 5' },
+    { icon: '🪙', name: 'COIN FLIP',            format: 'BEST OF 3' },
+    { icon: '🎲', name: 'DICE DUEL',            format: 'BEST OF 3' },
+    { icon: '📈', name: 'HIGHER-LOWER',          format: 'BEST OF 3' },
+  ];
+
+  const gamesHTML = GAMES.map(g => `
+    <div class="back-game-row">
+      <span class="back-game-icon">${g.icon}</span>
+      <span class="back-game-name">${escHtml(g.name)}</span>
+      <span class="back-game-format">${escHtml(g.format)}</span>
+    </div>`).join('');
+
+  const atkPct = ((stats.atk - 50) / 200 * 100).toFixed(0);
+  const defPct = ((stats.def - 50) / 200 * 100).toFixed(0);
+  const spdPct = ((stats.spd - 50) / 200 * 100).toFixed(0);
+
+  const specialNote = cfg.specialMove
+    ? `Free special move in Dice Duel &amp; Higher-Lower`
+    : `Burn 1,000 $MOGS to unlock special move`;
+
+  return `
+    <div class="back-header-section">
+      <div class="back-logo-text">🐹 MONAD MOGS</div>
+      <div class="back-type-pill" style="color:${cardType.color};background:${cardType.bg}">${escHtml(cardType.type)}</div>
+      <div class="back-mog-id">MOG #${mogId} · @${escHtml(xHandle)}</div>
+    </div>
+
+    <div class="back-stats-section">
+      <div class="back-section-label">— BASE STATS —</div>
+      <div class="back-stat-row">
+        <span class="back-stat-name">ATK</span>
+        <div class="back-stat-track"><div class="back-stat-fill back-stat-fill-atk" style="width:${atkPct}%"></div></div>
+        <span class="back-stat-num">${stats.atk}</span>
+      </div>
+      <div class="back-stat-row">
+        <span class="back-stat-name">DEF</span>
+        <div class="back-stat-track"><div class="back-stat-fill back-stat-fill-def" style="width:${defPct}%"></div></div>
+        <span class="back-stat-num">${stats.def}</span>
+      </div>
+      <div class="back-stat-row">
+        <span class="back-stat-name">SPD</span>
+        <div class="back-stat-track"><div class="back-stat-fill back-stat-fill-spd" style="width:${spdPct}%"></div></div>
+        <span class="back-stat-num">${stats.spd}</span>
+      </div>
+    </div>
+
+    <div class="back-games-section">
+      <div class="back-section-label">— ARENA GAMES —</div>
+      ${gamesHTML}
+      <div class="back-special-note">${specialNote}</div>
+    </div>
+
+    <div class="back-footer-section">
+      <div class="back-contract">CONTRACT · 0x1414...5137</div>
+      <div class="back-chain">MONAD MAINNET · CHAIN ID 143</div>
+    </div>
+
+    <div class="back-flip-hint">↺ FLIP BACK</div>
+  `;
+}
+
+// =====================================================
 // MOUSE PARALLAX + SHIMMER
 // =====================================================
 
 function initCardInteraction(card) {
-  const shineDot = card.querySelector('.card-shine-dot');
+  const flipInner = card.querySelector('.card-flip-inner');
+  const frontFace = card.querySelector('.card-front-face');
+  const shineDot  = card.querySelector('.card-shine-dot');
 
   card.addEventListener('mousemove', (e) => {
+    if (card.classList.contains('is-flipped')) return;
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-
-    // 3D tilt
+    const y = (e.clientY - rect.top)  / rect.height;
     const tiltX = (y - 0.5) * -18;
     const tiltY = (x - 0.5) *  18;
-    card.style.transform = `
-      perspective(1100px)
-      rotateX(${tiltX}deg)
-      rotateY(${tiltY}deg)
-      scale3d(1.05, 1.05, 1.05)
-    `;
-
-    // Shimmer position
-    card.style.setProperty('--mouse-x', `${(x * 100).toFixed(1)}%`);
-    card.style.setProperty('--mouse-y', `${(y * 100).toFixed(1)}%`);
-
-    // Shine dot
+    if (flipInner) flipInner.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale3d(1.05,1.05,1.05)`;
+    if (frontFace) {
+      frontFace.style.setProperty('--mouse-x', `${(x * 100).toFixed(1)}%`);
+      frontFace.style.setProperty('--mouse-y', `${(y * 100).toFixed(1)}%`);
+    }
     if (shineDot) {
       shineDot.style.left = `${e.clientX - rect.left}px`;
       shineDot.style.top  = `${e.clientY - rect.top}px`;
@@ -494,26 +644,55 @@ function initCardInteraction(card) {
   });
 
   card.addEventListener('mouseleave', () => {
-    card.style.transform = 'perspective(1100px) rotateX(0deg) rotateY(0deg) scale3d(1,1,1)';
-    card.style.removeProperty('--mouse-x');
-    card.style.removeProperty('--mouse-y');
+    if (card.classList.contains('is-flipped')) return;
+    if (flipInner) flipInner.style.transform = '';
+    if (frontFace) {
+      frontFace.style.removeProperty('--mouse-x');
+      frontFace.style.removeProperty('--mouse-y');
+    }
   });
 
-  // Touch tilt (mobile)
   card.addEventListener('touchmove', (e) => {
+    if (card.classList.contains('is-flipped')) return;
     e.preventDefault();
     const touch = e.touches[0];
     const rect  = card.getBoundingClientRect();
     const x = (touch.clientX - rect.left) / rect.width;
     const y = (touch.clientY - rect.top)  / rect.height;
-    const tiltX = (y - 0.5) * -10;
-    const tiltY = (x - 0.5) *  10;
-    card.style.transform = `perspective(1100px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    if (flipInner) flipInner.style.transform = `rotateX(${(y-0.5)*-10}deg) rotateY(${(x-0.5)*10}deg)`;
   }, { passive: false });
 
   card.addEventListener('touchend', () => {
-    card.style.transform = 'perspective(1100px) rotateX(0deg) rotateY(0deg)';
+    if (card.classList.contains('is-flipped')) return;
+    if (flipInner) flipInner.style.transform = '';
   });
+
+  // Click anywhere on card to flip
+  card.addEventListener('click', () => {
+    if (flipInner) flipInner.style.transform = ''; // clear tilt before flip
+    card.classList.toggle('is-flipped');
+  });
+}
+
+
+// =====================================================
+// TWEET CARD
+// =====================================================
+
+function tweetCard(mogId, xHandle, tier, memeName) {
+  const cfg = RARITY[tier] || RARITY.common;
+  const text = [
+    `just pulled my mogs card 🐹`,
+    ``,
+    `${cfg.label} · MOG #${mogId}`,
+    `"${memeName}"`,
+    ``,
+    `generate yours 👇`,
+    `https://www.monadmogs.xyz/#studio`,
+    ``,
+    `#MonadMogs #Monad`,
+  ].join('\n');
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, '_blank', 'noopener,noreferrer');
 }
 
 // =====================================================
@@ -575,10 +754,12 @@ async function embedGoogleFonts() {
 // =====================================================
 
 async function downloadCard() {
-  const card = document.getElementById('mog-card');
-  const btn  = document.getElementById('download-btn');
+  const captureEl  = document.getElementById('card-front-face');
+  const card       = document.getElementById('mog-card');
+  const flipInner  = document.getElementById('card-flip-inner');
+  const btn        = document.getElementById('download-btn');
 
-  if (!window.domtoimage) {
+  if (!window.domtoimage || !captureEl) {
     alert('Download library not loaded yet. Please wait a moment and try again.');
     return;
   }
@@ -586,8 +767,7 @@ async function downloadCard() {
   btn.textContent = '⏳ Rendering...';
   btn.disabled    = true;
 
-  // Pre-embed Google Fonts so dom-to-image's clone has them available.
-  // Without this, the clone falls back to system fonts → wrong metrics → layout shifts.
+  // Pre-embed Google Fonts
   const fontCSS     = await embedGoogleFonts();
   let   fontStyleEl = null;
   if (fontCSS) {
@@ -597,14 +777,22 @@ async function downloadCard() {
     document.head.appendChild(fontStyleEl);
   }
 
-  // Freeze all animations and transitions on the card for a clean capture
-  const savedTransform   = card.style.transform;
-  const savedTransition  = card.style.transition;
-  card.style.transform   = 'none';
-  card.style.transition  = 'none';
+  // Freeze flip-inner so the front face is always what we capture
+  const savedFlipTransform = flipInner ? flipInner.style.transform : '';
+  const savedFlipTransition = flipInner ? flipInner.style.transition : '';
+  if (flipInner) { flipInner.style.transform = ''; flipInner.style.transition = 'none'; }
 
-  // Pause animated children (ring, badge pulse) so they don't flicker mid-capture
-  const animated = card.querySelectorAll('*');
+  // Unflip the card temporarily if needed
+  const wasFlipped = card.classList.contains('is-flipped');
+  if (wasFlipped) card.classList.remove('is-flipped');
+
+  // Freeze animations on the capture element
+  const savedTransform  = captureEl.style.transform;
+  const savedTransition = captureEl.style.transition;
+  captureEl.style.transform  = 'none';
+  captureEl.style.transition = 'none';
+
+  const animated = captureEl.querySelectorAll('*');
   animated.forEach(el => {
     el.style.animationPlayState = 'paused';
     el.style.transition         = 'none';
@@ -616,7 +804,7 @@ async function downloadCard() {
   try {
     // Use domtoimage's native `scale` option — avoids the broken
     // "width * scale + transform:scale(N)" double-scale bug that clips content
-    const dataUrl = await domtoimage.toPng(card, {
+    const dataUrl = await domtoimage.toPng(captureEl, {
       scale:   3,
       bgcolor: '#1c1735',
       filter: (node) => {
@@ -637,16 +825,20 @@ async function downloadCard() {
     console.error('Download failed:', err);
     alert('Render failed. Try right-clicking the card to save it manually.');
   } finally {
-    // Remove injected font style (was only needed for the dom-to-image clone)
     if (fontStyleEl) fontStyleEl.remove();
 
-    // Restore live styles
-    card.style.transform  = savedTransform;
-    card.style.transition = savedTransition;
+    // Restore capture element
+    captureEl.style.transform  = savedTransform;
+    captureEl.style.transition = savedTransition;
     animated.forEach(el => {
       el.style.animationPlayState = '';
       el.style.transition         = '';
     });
+
+    // Restore flip state
+    if (wasFlipped) card.classList.add('is-flipped');
+    if (flipInner) { flipInner.style.transform = savedFlipTransform; flipInner.style.transition = savedFlipTransition; }
+
     btn.textContent = '📥 DOWNLOAD CARD';
     btn.disabled    = false;
   }
@@ -721,10 +913,18 @@ function showCardOutput() {
   const out  = document.getElementById('card-output');
   const card = document.getElementById('mog-card');
   out.classList.remove('hidden');
-  // Trigger reveal animation
   card.classList.remove('revealed');
   void card.offsetWidth; // reflow
   card.classList.add('revealed');
+
+  // Remove 'revealed' after animation ends so animation fill-mode
+  // doesn't block the flip transition on card-flip-inner
+  const flipInner = card.querySelector('.card-flip-inner');
+  if (flipInner) {
+    flipInner.addEventListener('animationend', () => {
+      card.classList.remove('revealed');
+    }, { once: true });
+  }
 }
 
 function hideCardOutput() {
@@ -820,6 +1020,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Download
   document.getElementById('download-btn').addEventListener('click', downloadCard);
+
+  // Tweet
+  document.getElementById('tweet-btn').addEventListener('click', () => {
+    if (currentMogId) {
+      const memeName = document.querySelector('.card-meme-name')?.textContent || `MOG #${currentMogId}`;
+      const tier = document.getElementById('mog-card')?.className.match(/card-bg-(\w+)/)?.[1] || 'common';
+      tweetCard(currentMogId, currentHandle, tier, memeName);
+    }
+  });
 
   // New card
   document.getElementById('new-card-btn').addEventListener('click', () => {
