@@ -1,0 +1,1145 @@
+/* =====================================================
+   MOGS CARD — style.css
+   Monad Brand × Pokémon Card Aesthetic
+   No glassmorphism. Pure pixel energy.
+   ===================================================== */
+
+/* ---- CSS Custom Properties ---- */
+:root {
+  /* Monad Brand */
+  --monad-purple:       #836EF9;
+  --monad-purple-light: #A594FF;
+  --monad-purple-dark:  #5A4CC0;
+  --monad-dark:         #0C0917;
+  --monad-mid:          #13102B;
+  --monad-mid-2:        #1C1735;
+  --monad-border:       #2D2355;
+
+  /* Rarity Tiers */
+  --c-common:     #9BA3AF;
+  --c-uncommon:   #4ADE80;
+  --c-rare:       #60A5FA;
+  --c-epic:       #C084FC;
+  --c-legendary:  #F5C518;
+
+  /* Text */
+  --txt-primary:   #EDE9F8;
+  --txt-secondary: #8B7FBA;
+  --txt-muted:     #4F4777;
+
+  /* Card */
+  --card-w: 384px;
+  --card-radius: 22px;
+  --card-border: 3px;
+  --card-inner-radius: calc(var(--card-radius) - var(--card-border));
+}
+
+/* =====================================================
+   @property declarations for animatable custom props
+   ===================================================== */
+@property --holo-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@property --holo-opacity {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+/* =====================================================
+   Reset & Base
+   ===================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  background-color: var(--monad-dark);
+  color: var(--txt-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+a {
+  color: var(--monad-purple);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+a:hover { color: var(--monad-purple-light); }
+
+/* =====================================================
+   Background Decoration
+   ===================================================== */
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(131,110,249,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(131,110,249,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  filter: blur(80px);
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(131,110,249,0.18) 0%, transparent 70%);
+  top: -150px;
+  right: -150px;
+  animation: orb-float 8s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(90,76,192,0.12) 0%, transparent 70%);
+  bottom: -100px;
+  left: -100px;
+  animation: orb-float 10s ease-in-out infinite reverse;
+}
+
+@keyframes orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%       { transform: translate(20px, -30px) scale(1.05); }
+}
+
+/* =====================================================
+   Header
+   ===================================================== */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(12,9,23,0.92);
+  border-bottom: 1px solid var(--monad-border);
+}
+
+.header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0.875rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.logo-emoji { font-size: 1.4rem; }
+
+.logo-text {
+  font-family: 'Bangers', cursive;
+  font-size: 1.7rem;
+  letter-spacing: 0.08em;
+  color: var(--monad-purple);
+  text-shadow: 0 0 20px rgba(131,110,249,0.5);
+}
+
+.header-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.nav-link {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--txt-secondary);
+  transition: color 0.2s;
+}
+.nav-link:hover { color: var(--monad-purple); }
+
+/* =====================================================
+   Main Layout
+   ===================================================== */
+.main {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+/* =====================================================
+   Hero
+   ===================================================== */
+.hero {
+  text-align: center;
+  max-width: 700px;
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  margin-bottom: 1rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--monad-purple);
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+  animation: fade-in 0.6s ease forwards;
+}
+
+.hero-title {
+  display: flex;
+  flex-direction: column;
+  font-family: 'Bangers', cursive;
+  font-size: clamp(3rem, 9vw, 5.5rem);
+  line-height: 0.9;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  animation: fade-up 0.8s ease forwards;
+}
+
+.title-line-1 { color: var(--txt-primary); }
+.title-line-2 { color: var(--monad-purple); text-shadow: 0 0 40px rgba(131,110,249,0.5); }
+.title-line-3 {
+  color: var(--txt-primary);
+  -webkit-text-stroke: 2px var(--monad-purple);
+}
+
+.hero-sub {
+  margin-top: 1.25rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  letter-spacing: 0.02em;
+  animation: fade-up 1s ease forwards;
+}
+
+/* =====================================================
+   Form
+   ===================================================== */
+.form-section {
+  width: 100%;
+  max-width: 640px;
+}
+
+.card-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1.75rem;
+  background: var(--monad-mid);
+  border: 1px solid var(--monad-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 170px;
+}
+
+.input-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--txt-secondary);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  background: var(--monad-dark);
+  border: 2px solid var(--monad-border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--monad-purple);
+  box-shadow: 0 0 0 3px rgba(131,110,249,0.18);
+}
+
+.input-prefix {
+  padding: 0.65rem 0.75rem;
+  color: var(--monad-purple);
+  font-weight: 700;
+  font-size: 1.1rem;
+  border-right: 1px solid var(--monad-border);
+  background: rgba(131,110,249,0.08);
+  user-select: none;
+  line-height: 1;
+}
+
+.text-input {
+  flex: 1;
+  padding: 0.65rem 0.875rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--txt-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  min-width: 0;
+}
+
+.text-input::placeholder { color: var(--txt-muted); }
+
+/* Remove number input spinners */
+.text-input[type="number"]::-webkit-inner-spin-button,
+.text-input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.text-input[type="number"] { -moz-appearance: textfield; }
+
+.generate-btn {
+  position: relative;
+  padding: 0;
+  background: var(--monad-purple);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(131,110,249,0.4);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.generate-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  pointer-events: none;
+}
+
+.btn-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.72rem 1.75rem;
+}
+
+.btn-text {
+  font-family: 'Bangers', cursive;
+  font-size: 1.25rem;
+  letter-spacing: 0.1em;
+  color: #fff;
+}
+
+.btn-icon { font-size: 1rem; }
+
+.generate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(131,110,249,0.6);
+  background: var(--monad-purple-light);
+}
+
+.generate-btn:active { transform: translateY(0); }
+.generate-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  pointer-events: none;
+}
+
+/* =====================================================
+   Loading State
+   ===================================================== */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem;
+}
+
+.loading-ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+.loading-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid var(--monad-border);
+  border-top-color: var(--monad-purple);
+  animation: ring-spin 0.75s linear infinite;
+}
+
+.loading-ring-inner {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-bottom-color: var(--monad-purple-light);
+  animation: ring-spin 1.2s linear infinite reverse;
+}
+
+@keyframes ring-spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6rem;
+  color: var(--txt-secondary);
+  letter-spacing: 0.06em;
+  text-align: center;
+  line-height: 1.8;
+  animation: pulse-txt 1.4s ease-in-out infinite;
+  max-width: 320px;
+}
+
+@keyframes pulse-txt {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* =====================================================
+   Error State
+   ===================================================== */
+.error-state {
+  padding: 1rem 1.5rem;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.35);
+  border-radius: 12px;
+  color: #FCA5A5;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: center;
+  max-width: 500px;
+}
+
+/* =====================================================
+   Card Output
+   ===================================================== */
+.card-output {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* =====================================================
+   ██████████████████████████████████████████████████
+                    THE MOG CARD
+   ██████████████████████████████████████████████████
+   ===================================================== */
+
+.mog-card {
+  position: relative;
+  width: var(--card-w);
+  border-radius: var(--card-radius);
+  border: var(--card-border) solid var(--rarity-color, var(--monad-purple));
+  background: var(--monad-mid);
+  cursor: pointer;
+
+  /* 3D context */
+  transform-style: preserve-3d;
+  transition: transform 0.12s ease-out, box-shadow 0.3s;
+
+  /* Outer glow by rarity */
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.6),
+    0 24px 60px rgba(0,0,0,0.8),
+    0 0 50px var(--rarity-glow, rgba(131,110,249,0.3));
+
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ---- Holographic rainbow shimmer layer ---- */
+.mog-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 20;
+  pointer-events: none;
+
+  background:
+    radial-gradient(
+      ellipse 80% 60% at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(255,255,255,0.14) 0%,
+      transparent 55%
+    ),
+    conic-gradient(
+      from var(--holo-angle) at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(255,0,100,0.2)   0%,
+      rgba(255,140,0,0.2)   15%,
+      rgba(255,240,0,0.2)   30%,
+      rgba(0,255,150,0.2)   50%,
+      rgba(0,140,255,0.2)   70%,
+      rgba(180,0,255,0.2)   85%,
+      rgba(255,0,100,0.2)   100%
+    );
+
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+
+.mog-card:hover::before {
+  opacity: 1;
+  animation: holo-spin 5s linear infinite;
+}
+
+@keyframes holo-spin {
+  from { --holo-angle: 0deg; }
+  to   { --holo-angle: 360deg; }
+}
+
+/* ---- Watermark / Filigran layer ---- */
+.mog-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 19;
+  pointer-events: none;
+
+  background-image:
+    repeating-linear-gradient(
+      -40deg,
+      transparent,
+      transparent 18px,
+      rgba(131,110,249,0.07) 18px,
+      rgba(131,110,249,0.07) 19px
+    ),
+    repeating-linear-gradient(
+      50deg,
+      transparent,
+      transparent 28px,
+      rgba(131,110,249,0.04) 28px,
+      rgba(131,110,249,0.04) 29px
+    );
+
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.mog-card:hover::after {
+  opacity: 1;
+}
+
+/* =====================================================
+   CARD — HEADER BAR
+   ===================================================== */
+.card-header {
+  position: relative;
+  z-index: 5;
+  padding: 0.5rem 0.875rem;
+  background: linear-gradient(135deg, #0C0917 0%, #160F2E 100%);
+  border-bottom: 2px solid var(--rarity-color, var(--monad-purple));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ch-left { display: flex; flex-direction: column; gap: 1px; }
+
+.ch-collection {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  color: var(--monad-purple);
+  letter-spacing: 0.05em;
+  opacity: 0.75;
+}
+
+.ch-id {
+  font-family: 'Bangers', cursive;
+  font-size: 1.45rem;
+  letter-spacing: 0.04em;
+  color: var(--txt-primary);
+  line-height: 1;
+}
+
+.rarity-badge {
+  font-family: 'Bangers', cursive;
+  font-size: 0.78rem;
+  letter-spacing: 0.15em;
+  padding: 0.22rem 0.65rem;
+  border-radius: 6px;
+  border: 1.5px solid currentColor;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.rb-common    { color: var(--c-common);    background: rgba(155,163,175,0.1); }
+.rb-uncommon  { color: var(--c-uncommon);  background: rgba(74,222,128,0.1); }
+.rb-rare      { color: var(--c-rare);      background: rgba(96,165,250,0.1); }
+.rb-epic      { color: var(--c-epic);      background: rgba(192,132,252,0.12); }
+.rb-legendary {
+  color: var(--c-legendary);
+  background: rgba(245,197,24,0.12);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(245,197,24,0.4); }
+  50%       { box-shadow: 0 0 18px rgba(245,197,24,0.75), 0 0 30px rgba(245,197,24,0.25); }
+}
+
+/* =====================================================
+   CARD — MEDIA ROW (PFP + Mog Render side by side)
+   ===================================================== */
+.card-media-row {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #0C0917;
+  border-top: 1px solid rgba(131,110,249,0.15);
+  border-bottom: 1px solid rgba(131,110,249,0.15);
+  min-height: 148px;
+}
+
+.pfp-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 0.75rem;
+  border-right: 1px solid rgba(131,110,249,0.1);
+}
+
+.render-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 0.75rem;
+}
+
+.pfp-ring-wrap {
+  position: relative;
+  width: 82px;
+  height: 82px;
+}
+
+.pfp-ring-bg {
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--rarity-color, var(--monad-purple)) 0%,
+    var(--monad-purple-light) 25%,
+    #F5C518 50%,
+    var(--monad-purple-light) 75%,
+    var(--rarity-color, var(--monad-purple)) 100%
+  );
+  animation: ring-rotate 5s linear infinite;
+}
+
+@keyframes ring-rotate { to { transform: rotate(360deg); } }
+
+.pfp-ring-inner {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: var(--monad-dark);
+  z-index: 1;
+}
+
+.card-pfp-img {
+  position: relative;
+  z-index: 2;
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  background: var(--monad-mid-2);
+}
+
+.pfp-handle-tag {
+  margin-top: 6px;
+  background: var(--monad-dark);
+  border: 1px solid var(--rarity-color, var(--monad-purple));
+  border-radius: 20px;
+  padding: 0.12rem 0.55rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--rarity-color, var(--monad-purple));
+  white-space: nowrap;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mog-render-img {
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  border-radius: 8px;
+  display: block;
+}
+
+.render-placeholder {
+  width: 128px;
+  height: 128px;
+  border-radius: 8px;
+  background: var(--monad-mid);
+  border: 2px dashed var(--monad-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+}
+
+/* =====================================================
+   CARD — NAME & HP
+   ===================================================== */
+.card-name-section {
+  position: relative;
+  z-index: 5;
+  padding: 0.6rem 0.875rem 0.45rem;
+  background: var(--monad-mid);
+}
+
+.card-meme-name {
+  font-family: 'Bangers', cursive;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: var(--txt-primary);
+  line-height: 1.15;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+}
+
+.hp-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hp-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  color: var(--txt-secondary);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.hp-track {
+  flex: 1;
+  height: 7px;
+  background: var(--monad-dark);
+  border-radius: 4px;
+  border: 1px solid var(--monad-border);
+  overflow: hidden;
+}
+
+.hp-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--monad-purple-dark), var(--monad-purple), var(--monad-purple-light));
+  box-shadow: 0 0 8px var(--monad-purple);
+  width: 0%;
+  transition: width 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.hp-value {
+  font-family: 'Bangers', cursive;
+  font-size: 1.2rem;
+  letter-spacing: 0.04em;
+  color: var(--txt-primary);
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+/* =====================================================
+   CARD — DIVIDER
+   ===================================================== */
+.card-divider {
+  position: relative;
+  z-index: 5;
+  height: 2px;
+  margin: 0 0.875rem;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--rarity-color, var(--monad-purple)) 20%,
+    var(--rarity-color, var(--monad-purple)) 80%,
+    transparent 100%
+  );
+  opacity: 0.6;
+}
+
+/* =====================================================
+   CARD — TRAITS
+   ===================================================== */
+.card-traits {
+  position: relative;
+  z-index: 5;
+  padding: 0.45rem 0.75rem 0.5rem;
+  background: var(--monad-mid);
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.traits-header {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  color: var(--txt-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+  text-align: center;
+}
+
+.trait-row {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr auto;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.45rem;
+  border-radius: 6px;
+  background: rgba(12,9,23,0.6);
+  border: 1px solid var(--monad-border);
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.trait-row:hover {
+  border-color: var(--rarity-color, var(--monad-purple));
+  background: rgba(131,110,249,0.05);
+}
+
+.trait-emoji {
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1;
+}
+
+.trait-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.trait-cat {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--txt-secondary);
+  line-height: 1;
+}
+
+.trait-val {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--txt-primary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trait-pct {
+  font-family: 'Bangers', cursive;
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.trait-pct.pct-common     { color: var(--txt-secondary); }
+.trait-pct.pct-uncommon   { color: var(--c-uncommon); }
+.trait-pct.pct-rare       { color: var(--c-rare); }
+.trait-pct.pct-epic       { color: var(--c-epic); }
+.trait-pct.pct-legendary  { color: var(--c-legendary); }
+
+/* =====================================================
+   CARD — SPECIAL MOVE (Rare+)
+   ===================================================== */
+.card-special {
+  position: relative;
+  z-index: 5;
+  margin: 0.2rem 0.75rem 0;
+  padding: 0.45rem 0.65rem;
+  border: 1.5px solid var(--rarity-color, var(--monad-purple));
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(131,110,249,0.1), rgba(0,0,0,0));
+}
+
+.special-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.3rem;
+}
+
+.special-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.4rem;
+  color: var(--rarity-color, var(--monad-purple));
+  letter-spacing: 0.1em;
+}
+
+.special-move-name {
+  font-family: 'Bangers', cursive;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  color: var(--txt-primary);
+}
+
+.special-move-desc {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--txt-secondary);
+  line-height: 1.5;
+}
+
+/* =====================================================
+   CARD — FOOTER
+   ===================================================== */
+.card-footer {
+  position: relative;
+  z-index: 5;
+  padding: 0.45rem 0.875rem 0.55rem;
+  background: linear-gradient(180deg, #13102B, #0C0917);
+  border-top: 2px solid var(--rarity-color, var(--monad-purple));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.2rem;
+}
+
+.cf-rank {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.42rem;
+  color: var(--txt-secondary);
+  line-height: 1.8;
+  letter-spacing: 0.05em;
+}
+
+.cf-rank-num {
+  color: var(--rarity-color, var(--monad-purple));
+  font-size: 0.52rem;
+}
+
+.cf-credit {
+  text-align: right;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.38rem;
+  color: var(--txt-muted);
+  line-height: 1.9;
+  letter-spacing: 0.04em;
+}
+
+.cf-credit a {
+  color: var(--monad-purple);
+  font-size: 0.42rem;
+}
+
+/* =====================================================
+   Card Watermark Text (injected via JS)
+   ===================================================== */
+.card-watermark-text {
+  position: absolute;
+  inset: 0;
+  z-index: 18;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
+
+.mog-card:hover .card-watermark-text { opacity: 1; }
+
+.watermark-inner {
+  font-family: 'Bangers', cursive;
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  color: rgba(131,110,249,0.12);
+  transform: rotate(-35deg) scale(2);
+  white-space: nowrap;
+  text-shadow: 0 0 20px rgba(131,110,249,0.2);
+  animation: watermark-pulse 3s ease-in-out infinite;
+}
+
+@keyframes watermark-pulse {
+  0%, 100% { opacity: 0.8; }
+  50%       { opacity: 1.2; }
+}
+
+/* =====================================================
+   Shine Dot (injected via JS, follows mouse)
+   ===================================================== */
+.card-shine-dot {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255,255,255,0.12) 0%,
+    rgba(255,255,255,0.04) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 21;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.mog-card:hover .card-shine-dot { opacity: 1; }
+
+/* =====================================================
+   Card Reveal Animation
+   ===================================================== */
+@keyframes card-reveal {
+  from {
+    opacity: 0;
+    transform: perspective(1200px) rotateY(-25deg) translateY(40px) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: perspective(1200px) rotateY(0deg) translateY(0) scale(1);
+  }
+}
+
+.mog-card.revealed {
+  animation: card-reveal 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* =====================================================
+   Card Actions
+   ===================================================== */
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.action-btn {
+  padding: 0.65rem 1.4rem;
+  border-radius: 10px;
+  border: 2px solid currentColor;
+  background: transparent;
+  font-family: 'Bangers', cursive;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s, box-shadow 0.2s;
+}
+
+.btn-download {
+  color: var(--monad-purple);
+}
+.btn-download:hover {
+  background: rgba(131,110,249,0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(131,110,249,0.3);
+}
+
+.btn-new {
+  color: var(--txt-secondary);
+}
+.btn-new:hover {
+  color: var(--txt-primary);
+  background: rgba(255,255,255,0.05);
+  transform: translateY(-2px);
+}
+
+/* =====================================================
+   Site Footer
+   ===================================================== */
+.site-footer {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 1.5rem 1.5rem 2rem;
+  border-top: 1px solid var(--monad-border);
+}
+
+.footer-text {
+  font-size: 0.85rem;
+  color: var(--txt-secondary);
+  font-weight: 600;
+}
+
+.footer-sub {
+  margin-top: 0.4rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: var(--txt-muted);
+}
+
+/* =====================================================
+   Utility
+   ===================================================== */
+.hidden { display: none !important; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* =====================================================
+   Responsive
+   ===================================================== */
+@media (max-width: 520px) {
+  :root { --card-w: 340px; }
+
+  .hero-title { font-size: clamp(2.5rem, 12vw, 4rem); }
+  .card-form { flex-direction: column; align-items: stretch; }
+  .generate-btn { width: 100%; }
+  .btn-inner { justify-content: center; }
+  .main { padding: 2rem 1rem 5rem; gap: 2rem; }
+  .header-nav { gap: 0.75rem; }
+  .nav-link { font-size: 0.72rem; }
+}
+
+@media (max-width: 380px) {
+  :root { --card-w: 300px; }
+  .card-meme-name { font-size: 1rem; }
+}

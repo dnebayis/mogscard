@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mogs Card — Monad Mogs NFT Card Generator</title>
+  <meta name="description" content="X kullanıcı adın ve Mog ID'nle premium Pokémon tarzı Mogs Card'ını oluştur. Monad Mogs koleksiyonu — 5,000 onchain pixel hamster on Monad.">
+  <meta property="og:title" content="Mogs Card Generator">
+  <meta property="og:description" content="Generate your premium Monad Mogs trading card. Pokémon style. Full meme mode.">
+  <meta property="og:url" content="https://monadmogs.xyz/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Press+Start+2P&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb orb-1" aria-hidden="true"></div>
+  <div class="bg-orb orb-2" aria-hidden="true"></div>
+
+  <!-- ======== HEADER ======== -->
+  <header class="site-header" role="banner">
+    <div class="header-inner">
+      <a href="https://monadmogs.xyz/" target="_blank" rel="noopener noreferrer" class="logo" aria-label="Monad Mogs homepage">
+        <span class="logo-emoji">🐹</span>
+        <span class="logo-text">MOGS CARD</span>
+      </a>
+      <nav class="header-nav">
+        <a href="https://monadmogs.xyz/" target="_blank" rel="noopener" class="nav-link">Site ↗</a>
+        <a href="https://opensea.io/collection/monad-mogs" target="_blank" rel="noopener" class="nav-link">OpenSea ↗</a>
+        <a href="https://x.com/monadmogs" target="_blank" rel="noopener" class="nav-link">𝕏 ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ======== MAIN ======== -->
+  <main id="main-content" class="main">
+
+    <!-- HERO -->
+    <section class="hero" aria-label="Hero section">
+      <div class="hero-eyebrow">⚡ 5,000 ONCHAIN PIXEL HAMSTERS · MONAD NETWORK</div>
+      <h1 class="hero-title">
+        <span class="title-line-1">YOUR MOG.</span>
+        <span class="title-line-2">YOUR CARD.</span>
+        <span class="title-line-3">YOUR LEGEND.</span>
+      </h1>
+      <p class="hero-sub">Enter your X handle &amp; Mog ID. We'll handle the rest. 🔥</p>
+    </section>
+
+    <!-- FORM -->
+    <section class="form-section" aria-label="Card generator form">
+      <form id="card-form" class="card-form" autocomplete="off" novalidate>
+        <div class="input-group">
+          <label for="x-username" class="input-label">X / Twitter Handle</label>
+          <div class="input-wrapper">
+            <span class="input-prefix" aria-hidden="true">@</span>
+            <input
+              type="text"
+              id="x-username"
+              name="x-username"
+              class="text-input"
+              placeholder="monadmogs"
+              maxlength="50"
+              required
+              autocomplete="off"
+              spellcheck="false"
+            >
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="mog-id" class="input-label">Mog ID (1–5000)</label>
+          <div class="input-wrapper">
+            <span class="input-prefix" aria-hidden="true">#</span>
+            <input
+              type="number"
+              id="mog-id"
+              name="mog-id"
+              class="text-input"
+              placeholder="1337"
+              min="1"
+              max="5000"
+              required
+            >
+          </div>
+        </div>
+
+        <button type="submit" id="generate-btn" class="generate-btn" aria-label="Generate Mogs Card">
+          <span class="btn-inner">
+            <span class="btn-text">GENERATE CARD</span>
+            <span class="btn-icon" aria-hidden="true">⚡</span>
+          </span>
+        </button>
+      </form>
+    </section>
+
+    <!-- LOADING -->
+    <div id="loading-state" class="loading-state hidden" role="status" aria-live="polite">
+      <div class="loading-ring" aria-hidden="true">
+        <div class="loading-ring-inner"></div>
+      </div>
+      <p id="loading-text" class="loading-text">Summoning your Mog from the blockchain...</p>
+    </div>
+
+    <!-- ERROR -->
+    <div id="error-state" class="error-state hidden" role="alert" aria-live="assertive"></div>
+
+    <!-- CARD OUTPUT -->
+    <div id="card-output" class="card-output hidden">
+
+      <!-- THE CARD -->
+      <div id="mog-card" class="mog-card" role="img" aria-label="Mogs NFT Card">
+        <!-- Built by JavaScript -->
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="card-actions" role="group" aria-label="Card actions">
+        <button id="download-btn" class="action-btn btn-download" aria-label="Download card as PNG">
+          📥 DOWNLOAD CARD
+        </button>
+<button id="new-card-btn" class="action-btn btn-new" aria-label="Generate a new card">
+          🔄 NEW CARD
+        </button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ======== FOOTER ======== -->
+  <footer class="site-footer" role="contentinfo">
+    <p class="footer-text">
+      Built using
+      <a href="https://monadmogs.xyz/" target="_blank" rel="noopener noreferrer">Monad Mogs</a>
+      public API &amp; CC0 assets ·
+      <a href="https://monadmogs.xyz/developers" target="_blank" rel="noopener noreferrer">Developers</a>
+      · Not official. Just vibes.
+    </p>
+    <p class="footer-sub">
+      <a href="https://monadmogs.xyz/" target="_blank" rel="noopener noreferrer">monadmogs.xyz ↗</a>
+    </p>
+  </footer>
+
+  <!-- dom-to-image-more for perfect PNG download (fixes html2canvas CSS bugs) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image-more/3.1.6/dom-to-image-more.min.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
