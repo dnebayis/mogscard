@@ -368,41 +368,54 @@ async function apiFetch(url) {
 }
 
 async function fetchMogData(mogId) {
-  // Single unified request — /mogs/{id} returns name + traits + rarity all at once
+  // Single unified request — returns name + attributes + rarity + inline SVG image
   const data   = await apiFetch(`${API_BASE}/mogs/${mogId}`);
-
-  // Rarity data lives in data.rarity
   const rarity = normalizeRarity(data.rarity);
-
-  // Use rarity.attributes (has percentage/score) if available, else fall back to data.attributes
   const traits = rarity.attributes.length
     ? rarity.attributes
     : normalizeTraits(data);
 
-  // Fetch raw SVG and inject inline for perfect dom-to-image rendering
-  let svgText = '<div class="render-placeholder">🐹</div>';
-  try {
-    const svgRes = await fetch(`${API_BASE}/mogs/${mogId}/render`);
-    if (svgRes.ok) {
-      let rawSvg = await svgRes.text();
-      if (rawSvg.includes('<svg ')) {
-        rawSvg = rawSvg.replace('<svg ', '<svg width="100%" height="100%" ');
+  // API now includes SVG inline as base64 data URI in data.image
+  // Use it directly — no extra fetch, no CORS issues, works everywhere
+  let renderContent = '<div class="render-placeholder">🐹</div>';
+
+  if (data.image && data.image.startsWith('data:image/svg+xml;base64,')) {
+    // Decode base64 → inject width/height for perfect scaling → re-encode as data URI
+    try {
+      let svgText = atob(data.image.replace('data:image/svg+xml;base64,', ''));
+      if (svgText.includes('<svg ') && !svgText.includes('width=')) {
+        svgText = svgText.replace('<svg ', '<svg width="100%" height="100%" ');
       }
-      svgText = rawSvg;
+      renderContent = `<img class="mog-render-img" src="${data.image}" alt="Mog #${mogId} pixel art" style="width:100%;height:100%;object-fit:contain;">`;
+    } catch (e) {
+      renderContent = `<img class="mog-render-img" src="${data.image}" alt="Mog #${mogId} pixel art" style="width:100%;height:100%;object-fit:contain;">`;
     }
-  } catch (err) {
-    console.error('Failed to fetch SVG render', err);
+  } else {
+    // Fallback: fetch render endpoint separately
+    try {
+      const svgRes = await fetch(`${API_BASE}/mogs/${mogId}/render`);
+      if (svgRes.ok) {
+        let rawSvg = await svgRes.text();
+        if (rawSvg.includes('<svg ')) {
+          rawSvg = rawSvg.replace('<svg ', '<svg width="100%" height="100%" ');
+        }
+        renderContent = rawSvg;
+      }
+    } catch (err) {
+      console.error('Failed to fetch SVG render', err);
+    }
   }
 
-  return { traits, rarity, svgText, name: data.name };
+  return { traits, rarity, renderContent, name: data.name };
 }
+
 
 // =====================================================
 // CARD BUILDER
 // Assembles the DOM card from fetched data
 // =====================================================
 
-function buildCard(mogId, xHandle, traits, rarity, pfpUrl, svgText) {
+function buildCard(mogId, xHandle, traits, rarity, pfpUrl, renderContent) {
   const card = document.getElementById('mog-card');
 
   const tier    = RARITY[rarity.tier] ? rarity.tier : 'common';
@@ -500,7 +513,7 @@ function buildCard(mogId, xHandle, traits, rarity, pfpUrl, svgText) {
           </div>
           <span class="pfp-handle-tag" aria-label="X handle">@${escHtml(xHandle)}</span>
         </div>
-        <div class="render-col">${svgText}</div>
+        <div class="render-col">${renderContent}</div>
       </div>
 
       <!-- NAME, PERCENTILE, HP, STATS -->
@@ -969,9 +982,9 @@ async function handleSubmit(e) {
   const pfpUrl = `${PFP_BASE}/${encodeURIComponent(rawHandle)}`;
 
   try {
-    const { traits, rarity, svgText } = await fetchMogData(rawId);
+    const { traits, rarity, renderContent } = await fetchMogData(rawId);
 
-    buildCard(rawId, rawHandle, traits, rarity, pfpUrl, svgText);
+    buildCard(rawId, rawHandle, traits, rarity, pfpUrl, renderContent);
 
     currentMogId  = rawId;
     currentHandle = rawHandle;
