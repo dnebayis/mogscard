@@ -11,8 +11,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  // req.url = /api/proxy/v0/mogs/263  →  strip /api/proxy  →  /v0/mogs/263
-  const apiPath   = (req.url || '').replace(/^\/api\/proxy/, '').split('?')[0] || '/';
+  // req.url = /api/proxy/v0/mogs/263
+  // Strip /api/proxy/v0 → /mogs/263
+  // Combined with API_BASE → https://api.monadmogs.xyz/api/v0/mogs/263 ✅
+  const apiPath   = (req.url || '').replace(/^\/api\/proxy\/v0/, '').split('?')[0] || '/';
   const targetUrl = `${API_BASE}${apiPath}`;
   console.log('[proxy]', req.url, '→', targetUrl);
 
