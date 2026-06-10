@@ -25,7 +25,9 @@
 // CONSTANTS
 // =====================================================
 
-const API_BASE   = 'https://api.monadmogs.xyz/api/v0';
+// Local proxy routes everything through proxy.js (node proxy.js)
+// because api.monadmogs.xyz only allows CORS from monadmogs.xyz
+const API_BASE   = '/proxy/v0';
 const MOGS_SITE  = 'https://monadmogs.xyz/';
 const MOGS_TOTAL = 5000;
 
@@ -962,7 +964,7 @@ async function handleSubmit(e) {
   setLoading(true);
   startLoadingCycle();
 
-  const pfpUrl = `https://unavatar.io/x/${encodeURIComponent(rawHandle)}`;
+  const pfpUrl = `/pfp/${encodeURIComponent(rawHandle)}`;
 
   try {
     const { traits, rarity, svgText } = await fetchMogData(rawId);
