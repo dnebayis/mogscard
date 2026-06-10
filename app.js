@@ -25,22 +25,10 @@
 // CONSTANTS
 // =====================================================
 
-// -------------------------------------------------------
-// PROXY CONFIG
-//   Local dev : proxy.js runs on localhost:3030 (/proxy/v0)
-//   Production: deploy worker.js to Cloudflare Workers and
-//               paste your *.workers.dev URL below.
-// -------------------------------------------------------
-const WORKER_PROXY_URL = 'YOUR_WORKER_URL_HERE'; // e.g. https://mogscard-proxy.YOUR_SUBDOMAIN.workers.dev
-
+// Localhost → proxy.js  |  Vercel production → /api/proxy (serverless function)
 const IS_LOCAL = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-const API_BASE = IS_LOCAL
-  ? '/proxy/v0'
-  : `${WORKER_PROXY_URL.replace(/\/$/, '')}/proxy/v0`;
-
-const PFP_BASE = IS_LOCAL
-  ? '/pfp'
-  : `${WORKER_PROXY_URL.replace(/\/$/, '')}/pfp`;
+const API_BASE = IS_LOCAL ? '/proxy/v0'  : '/api/proxy/v0';
+const PFP_BASE = IS_LOCAL ? '/pfp'       : '/api/pfp';
 
 const MOGS_SITE  = 'https://monadmogs.xyz/';
 const MOGS_TOTAL = 5000;
