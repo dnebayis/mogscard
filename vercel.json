@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/api/proxy/(.*)", "destination": "/api/proxy-handler" },
+    { "source": "/api/pfp/(.*)",   "destination": "/api/pfp-handler" }
+  ]
+}
