@@ -25,9 +25,23 @@
 // CONSTANTS
 // =====================================================
 
-// Local proxy routes everything through proxy.js (node proxy.js)
-// because api.monadmogs.xyz only allows CORS from monadmogs.xyz
-const API_BASE   = '/proxy/v0';
+// -------------------------------------------------------
+// PROXY CONFIG
+//   Local dev : proxy.js runs on localhost:3030 (/proxy/v0)
+//   Production: deploy worker.js to Cloudflare Workers and
+//               paste your *.workers.dev URL below.
+// -------------------------------------------------------
+const WORKER_PROXY_URL = 'YOUR_WORKER_URL_HERE'; // e.g. https://mogscard-proxy.YOUR_SUBDOMAIN.workers.dev
+
+const IS_LOCAL = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_BASE = IS_LOCAL
+  ? '/proxy/v0'
+  : `${WORKER_PROXY_URL.replace(/\/$/, '')}/proxy/v0`;
+
+const PFP_BASE = IS_LOCAL
+  ? '/pfp'
+  : `${WORKER_PROXY_URL.replace(/\/$/, '')}/pfp`;
+
 const MOGS_SITE  = 'https://monadmogs.xyz/';
 const MOGS_TOTAL = 5000;
 
@@ -964,7 +978,7 @@ async function handleSubmit(e) {
   setLoading(true);
   startLoadingCycle();
 
-  const pfpUrl = `/pfp/${encodeURIComponent(rawHandle)}`;
+  const pfpUrl = `${PFP_BASE}/${encodeURIComponent(rawHandle)}`;
 
   try {
     const { traits, rarity, svgText } = await fetchMogData(rawId);
