@@ -3,12 +3,20 @@
    Monad Mogs public API + unavatar.io
    CC0 assets — credit monadmogs.xyz
 
-   Real API response format (from /api/v0/mogs/{id}/rarity):
+   API: https://api.monadmogs.xyz/api/v0
+
+   GET /mogs/{id}  → single unified endpoint:
    {
-     tokenId, name, rank, tier, percentile, score,
-     attributes: [{ trait_type, value, frequency, percentage, score }],
-     snapshot: { tiers: { legendary:"1-50", epic:"51-250", ... } }
+     tokenId, name,
+     attributes: [{ trait_type, value }],
+     traits: { Background, Body, ... },
+     rarity: {
+       rank, tier, score, percentile,
+       attributes: [{ trait_type, value, frequency, percentage, score }]
+     }
    }
+
+   GET /mogs/{id}/render  → SVG pixel art
    ===================================================== */
 
 'use strict';
@@ -17,10 +25,9 @@
 // CONSTANTS
 // =====================================================
 
-const API_BASE    = 'https://api.monadmogs.xyz/api/v0';
-const RENDER_BASE = 'https://api.monadmogs.xyz/api/v0'; // img src — no CORS needed
-const MOGS_SITE   = 'https://monadmogs.xyz/';
-const MOGS_TOTAL  = 5000;
+const API_BASE   = 'https://api.monadmogs.xyz/api/v0';
+const MOGS_SITE  = 'https://monadmogs.xyz/';
+const MOGS_TOTAL = 5000;
 
 // =====================================================
 // RARITY CONFIG
@@ -357,20 +364,23 @@ async function apiFetch(url) {
 }
 
 async function fetchMogData(mogId) {
-  // Fetch rarity stats
-  const rarityRaw = await apiFetch(`${API_BASE}/mogs/${mogId}/rarity`);
-  const rarity    = normalizeRarity(rarityRaw);
-  const traits    = rarity.attributes.length
-    ? rarity.attributes
-    : normalizeTraits(rarityRaw);
+  // Single unified request — /mogs/{id} returns name + traits + rarity all at once
+  const data   = await apiFetch(`${API_BASE}/mogs/${mogId}`);
 
-  // Fetch raw SVG and inject it inline for perfect html2canvas rendering
-  let svgText = '<div class="render-placeholder">🐹</div>'; // fallback
+  // Rarity data lives in data.rarity
+  const rarity = normalizeRarity(data.rarity);
+
+  // Use rarity.attributes (has percentage/score) if available, else fall back to data.attributes
+  const traits = rarity.attributes.length
+    ? rarity.attributes
+    : normalizeTraits(data);
+
+  // Fetch raw SVG and inject inline for perfect dom-to-image rendering
+  let svgText = '<div class="render-placeholder">🐹</div>';
   try {
     const svgRes = await fetch(`${API_BASE}/mogs/${mogId}/render`);
     if (svgRes.ok) {
       let rawSvg = await svgRes.text();
-      // Inject 100% width/height so it scales perfectly in our container
       if (rawSvg.includes('<svg ')) {
         rawSvg = rawSvg.replace('<svg ', '<svg width="100%" height="100%" ');
       }
@@ -380,7 +390,7 @@ async function fetchMogData(mogId) {
     console.error('Failed to fetch SVG render', err);
   }
 
-  return { traits, rarity, svgText };
+  return { traits, rarity, svgText, name: data.name };
 }
 
 // =====================================================
