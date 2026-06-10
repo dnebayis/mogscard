@@ -991,11 +991,11 @@ async function handleSubmit(e) {
 
     let userMsg = err.message || 'Something went wrong. Please try again!';
     if (userMsg.includes('404') || userMsg.includes('not found')) {
-      userMsg = `Mog #${rawId} not found. IDs run from 1 to 5000 — this collection is sold out, all tokens exist.`;
+      userMsg = `Mog #${rawId} not found. IDs run from 1 to 5,000 — all tokens exist.`;
     } else if (userMsg.includes('Failed to fetch') || userMsg.includes('NetworkError') || userMsg.includes('CORS') || userMsg.includes('fetch')) {
-      userMsg = `Network error. Make sure you are running the dev server: node proxy.js`;
-    } else if (userMsg.includes('502') || userMsg.includes('Proxy')) {
-      userMsg = `Proxy error reaching the Monad Mogs API. Please try again.`;
+      userMsg = `Network error. Check your internet connection and try again.`;
+    } else if (userMsg.includes('502') || userMsg.includes('503')) {
+      userMsg = `The Monad Mogs API is temporarily unavailable. Try again in a moment.`;
     }
     showError(userMsg);
   }
