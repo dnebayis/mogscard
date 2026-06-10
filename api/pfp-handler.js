@@ -1,6 +1,6 @@
 // api/pfp-handler.js
-// Vercel serverless — proxies unavatar.io PFP images (CORS + redirect bypass)
-// Matched via vercel.json rewrite: /api/pfp/(.*) → here
+// Vercel serverless — proxies unavatar.io PFP images (follows redirects)
+// vercel.json rewrites: /api/pfp/(.*) → /api/pfp-handler
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,9 +9,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  const originalUrl = req.headers['x-original-url'] || req.url || '';
-  const username    = originalUrl.replace(/^\/api\/pfp\//, '').split('?')[0] || '';
-  const targetUrl   = `https://unavatar.io/x/${username}`;
+  // req.url = /api/pfp/monadmogs  →  strip /api/pfp/  →  monadmogs
+  const username  = (req.url || '').replace(/^\/api\/pfp\//, '').split('?')[0] || '';
+  const targetUrl = `https://unavatar.io/x/${username}`;
+  console.log('[pfp]', req.url, '→', targetUrl);
 
   try {
     const pfpRes      = await fetch(targetUrl, {
@@ -20,7 +21,6 @@ module.exports = async function handler(req, res) {
     });
     const contentType = pfpRes.headers.get('content-type') || 'image/jpeg';
     const body        = Buffer.from(await pfpRes.arrayBuffer());
-
     res.setHeader('Content-Type', contentType);
     return res.status(pfpRes.status).send(body);
   } catch (err) {

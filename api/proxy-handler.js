@@ -1,7 +1,6 @@
 // api/proxy-handler.js
-// Vercel serverless — proxies https://api.monadmogs.xyz (CORS bypass)
-// Matched via vercel.json rewrite: /api/proxy/(.*) → here
-// req.url will be /api/proxy-handler (original path lost), so we use x-original-url or reconstruct
+// Vercel serverless — proxies api.monadmogs.xyz (CORS bypass)
+// vercel.json rewrites: /api/proxy/(.*) → /api/proxy-handler
 
 const API_BASE = 'https://api.monadmogs.xyz/api/v0';
 
@@ -12,13 +11,10 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  // In Vercel, req.url contains the full original path even after rewrites
-  // e.g. /api/proxy/v0/mogs/263  →  strip /api/proxy  →  /v0/mogs/263
-  const reqUrl   = req.url || '';
-  const username  = reqUrl.replace(/^\/api\/pfp\//, '').split('?')[0] || '';
-  const targetUrl = `https://unavatar.io/x/${username}`;
-  console.log('[pfp] req.url:', reqUrl, '→', targetUrl);
-  console.log('[proxy] req.url:', reqUrl, '→', targetUrl);
+  // req.url = /api/proxy/v0/mogs/263  →  strip /api/proxy  →  /v0/mogs/263
+  const apiPath   = (req.url || '').replace(/^\/api\/proxy/, '').split('?')[0] || '/';
+  const targetUrl = `${API_BASE}${apiPath}`;
+  console.log('[proxy]', req.url, '→', targetUrl);
 
   try {
     const apiRes      = await fetch(targetUrl, {
@@ -26,7 +22,6 @@ module.exports = async function handler(req, res) {
     });
     const contentType = apiRes.headers.get('content-type') || 'application/json';
     const body        = Buffer.from(await apiRes.arrayBuffer());
-
     res.setHeader('Content-Type', contentType);
     return res.status(apiRes.status).send(body);
   } catch (err) {
